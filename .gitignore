@@ -1,1 +1,5 @@
 venv
+*.json
+*.xlsx
+config.py
+__pycache__
