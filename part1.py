@@ -1,72 +1,12 @@
 import json
 import pandas as pd
-from itertools import combinations
+from io import StringIO
 
-
-def extract_city_state_pairs(json_file):
-    with open(json_file, 'r', encoding='utf-8') as f:
-        data = json.load(f)
-
-    locations = []
-
-    for region_name, region_data in data["children"].items():
-        municipalities = region_data.get("children", {})
-
-        for municipality_name, municipality_data in municipalities.items():
-            parishes = municipality_data.get("children", {})
-
-            for parish_name in parishes:
-                locations.append({
-                    "city": parish_name,
-                    "state": region_name
-                })
-
-    return pd.DataFrame(locations)
-
-
-def generate_city_pairs(df_locations):
-    # Add a unique ID for each city
-    df_locations = df_locations.reset_index(drop=True)
-    df_locations["id"] = df_locations.index + 1  # 1-based indexing
-
-    # Generate all combinations of 2 cities (without repetition)
-    pairs = list(combinations(df_locations.to_dict("records"), 2))
-
-    # O "df_locations.to_dict("records")" faz com que passe de:
-    # [
-    #     {"id": 1, "city": "Lisboa", "state": "Lisboa"},
-    #     {"id": 2, "city": "Porto", "state": "Porto"},
-    #     {"id": 3, "city": "Coimbra", "state": "Coimbra"}
-    # ]
-
-    # Para isto:
-    # [
-    #     (
-    #         {"id": 1, "city": "Lisboa", "state": "Lisboa"},
-    #         {"id": 2, "city": "Porto", "state": "Porto"}
-    #     ),
-    #     (
-    #         {"id": 1, "city": "Lisboa", "state": "Lisboa"},
-    #         {"id": 3, "city": "Coimbra", "state": "Coimbra"}
-    #     ),
-    #     (
-    #         {"id": 2, "city": "Porto", "state": "Porto"},
-    #         {"id": 3, "city": "Coimbra", "state": "Coimbra"}
-    #     )
-    # ]
-
-    records = []
-    for a, b in pairs:
-        records.append({
-            "id_1": a["id"],
-            "id_2": b["id"],
-            "city_1": a["city"],
-            "city_2": b["city"],
-            "state_1": a["state"],
-            "state_2": b["state"],
-        })
-
-    return pd.DataFrame(records)
+expected_level_associated = {
+    1: 8,
+    2: 7,
+    3: 2
+}
 
 
 def find_paths(data, target, current_path=None):
@@ -90,17 +30,73 @@ def get_parents(data, target):
     return [path[:-1] for path in paths]
 
 
-def compute_expected_level(df):
-    for index, row in df[208:209].iterrows():  # É a 10 linha apenas
-    # for index, row in df.head(1).iterrows():  # Para iterar apenas a primeira linha
-    # for index, row in df.iterrows():
-        print(f"city_1 = {row['city_1']}, city_2 = {row['city_2']}, state_1 = {row['state_1']}, state_2 = {row['state_2']}")
-        # city_1,city_2,state_1,state_2
-        print(get_parents(data, f"{row['city_1']}"))
-        print(get_parents(data, f"{row['city_2']}"))
-        print(get_parents(data, f"{row['state_1']}"))
-        print(get_parents(data, f"{row['state_2']}"))
+def find_last_common_from_end_ignore_first(list1, list2):
+    # Ignorar o primeiro elemento
+    sub1 = list1[1:]
+    sub2 = list2[1:]
 
+    idx1 = len(sub1) - 1
+    idx2 = len(sub2) - 1
+    last_common_idx = -1
+
+    while idx1 >= 0 and idx2 >= 0 and sub1[idx1] == sub2[idx2]:
+        last_common_idx = idx1 + 1  # +1 para ajustar o índice original (pois ignoramos o primeiro)
+        idx1 -= 1
+        idx2 -= 1
+
+    return last_common_idx
+
+
+def city2target_path(df, city, target_state):
+    for index, row in df[5:6].iterrows():
+        city = row[city]
+        target_state = row[target_state]
+
+        parent_paths = find_paths(data, city)
+
+        if not parent_paths:
+            print(f"Nenhum caminho encontrado para a cidade '{city}'")
+            return None
+
+        if pd.isna(target_state) or not target_state:
+            # Se não foi passado um estado, devolve todos os caminhos possíveis da cidade até Portugal
+            all_paths = []
+            for path in parent_paths:
+                reversed_path = list(reversed(path)) + ['Portugal']
+                print(reversed_path)
+                all_paths.append(reversed_path)
+            return all_paths
+
+        else:
+            found_any = False
+            for path in parent_paths:
+                reversed_path = list(reversed(path))
+                if target_state.lower() in [p.lower() for p in reversed_path]:
+                    found_any = True
+                    path_array = reversed_path[:reversed_path.index(target_state) + 1] + ['Portugal']
+                    # print(path_array)
+                    return path_array
+            if not found_any:
+                print(f"Nenhum caminho até o estado '{target_state}' encontrado para a cidade '{city}'")
+
+
+def compute_expected_level(df):
+    # Comparar
+    city = 'city_1'
+    target_state = 'state_1'
+    locs_city1 = city2target_path(df, city, target_state)
+    # print(locs_city1)
+    city = 'city_2'
+    target_state = 'state_2'
+    locs_city2 = city2target_path(df, city, target_state)
+    print(locs_city2)
+    # pos = find_last_common_from_end_ignore_first(locs_city1, locs_city2)
+    # expected_level = expected_level_associated.get(pos, None)
+
+    # if not expected_level:
+    #     expected_level = 2
+    # df["expected_level"] = expected_level
+    # print(f"expected_level: {expected_level}")
 
 if __name__ == "__main__":
     json_file = "portugal.json"
@@ -108,15 +104,19 @@ if __name__ == "__main__":
     with open(json_file, 'r', encoding='utf-8') as f:
         data = json.load(f)
 
-    # print(get_parents(data, "ponta do sol"))
-    # print(get_parents(data, "madeira"))
-    df_locations = extract_city_state_pairs(json_file)
-    df_pairs = generate_city_pairs(df_locations)
-    compute_expected_level(df_pairs)
+    dados = """
+    id_1 id_2 city_1 city_2 state_1 state_2
+    1 2 valadares valadares viseu porto
+    1 3 valadares valadares viseu
+    4 5 valadares valadares
+    7 1 "lugar que nao existe" valadares viseu
+    1 8 valadares "sao pedro do sul viseu" viseu
+    1 8 valadares "sao pedro do sul viseu"
+    10 9 valadares "sao pedro do sul" viseu
+    """
+    # Usar StringIO para simular um ficheiro # TODO: Em vez de criar o data frame assim, usa um csv ou um xlsx
+    df = pd.read_csv(StringIO(dados), sep=' ', header=0, engine='python', quotechar='"')
+    # Preencher colunas ausentes com NaN
+    df = df.reindex(columns=['id_1', 'id_2', 'city_1', 'city_2', 'state_1', 'state_2'])
 
-
-    # print(df_pairs.head())
-
-    # # Save result if needed
-    # df_pairs.to_csv("city_state_pairs.csv", index=False)
-    # df_pairs.to_excel("city_state_pairs.xlsx", index=False)  # TODO: Corrigir depois o problema de memoria
+    compute_expected_level(df)
