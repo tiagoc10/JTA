@@ -1,12 +1,7 @@
 import json
 import pandas as pd
 from io import StringIO
-
-expected_level_associated = {
-    1: 8,
-    2: 7,
-    3: 2
-}
+from tabulate import tabulate
 
 
 def find_paths(data, target, current_path=None):
@@ -23,28 +18,6 @@ def find_paths(data, target, current_path=None):
         found_paths += find_paths(details, target, new_path)
 
     return found_paths
-
-
-def get_parents(data, target):
-    paths = find_paths(data, target)
-    return [path[:-1] for path in paths]
-
-
-def find_last_common_from_end_ignore_first(list1, list2):
-    # Ignorar o primeiro elemento
-    sub1 = list1[1:]
-    sub2 = list2[1:]
-
-    idx1 = len(sub1) - 1
-    idx2 = len(sub2) - 1
-    last_common_idx = -1
-
-    while idx1 >= 0 and idx2 >= 0 and sub1[idx1] == sub2[idx2]:
-        last_common_idx = idx1 + 1  # +1 para ajustar o índice original (pois ignoramos o primeiro)
-        idx1 -= 1
-        idx2 -= 1
-
-    return last_common_idx
 
 
 def city2target_paths(data, city, target_state):
@@ -74,15 +47,64 @@ def city2target_paths(data, city, target_state):
     return results
 
 
-def compute_expected_level(df):
-    city = 'city_1'
-    target_state = 'state_1'
-    res1 = city2target_paths(data, df[city][0], df[target_state][0])
-    print(f"Paths for {df[city][0]} to {df[target_state][0]}: {res1}")
-    city = 'city_2'
-    target_state = 'state_2'
-    res2 = city2target_paths(data, df[city][0], df[target_state][0])
-    print(f"Paths for {df[city][0]} to {df[target_state][0]}: {res2}")
+def get_admin_level(data, path):
+    # Traverse the JSON tree following the path, return 'admin_level' if found
+    node = data
+    for name in path:
+        if 'children' in node and name in node['children']:
+            node = node['children'][name]
+        else:
+            return None
+    return node.get('admin_level')
+
+
+def last_common_from_start(path1, path2):
+    # Compare from the start, return last common element and its index
+    min_len = min(len(path1), len(path2))
+    last_common = None
+    last_idx = -1
+    for i in range(min_len):
+        if path1[i] == path2[i]:
+            last_common = path1[i]
+            last_idx = i
+        else:
+            break
+    return last_common, last_idx
+
+
+def compute_expected_levels_for_all(df, data):
+    expected_levels = []
+    for idx, row in df.iterrows():
+        city1 = row['city_1']
+        state1 = row['state_1']
+        city2 = row['city_2']
+        state2 = row['state_2']
+        paths1 = city2target_paths(data, city1, state1)
+        paths2 = city2target_paths(data, city2, state2)
+        # If error message, set paths to [['Portugal']] so admin_level 2 is used
+        if not isinstance(paths1, list):
+            paths1 = [
+                ['Portugal']
+            ]
+        if not isinstance(paths2, list):
+            paths2 = [
+                ['Portugal']
+            ]
+        max_level = None
+        for p1 in paths1:
+            for p2 in paths2:
+                common, idx_common = last_common_from_start(p1, p2)
+                if common is not None:
+                    admin_level = get_admin_level(data, p1[:idx_common+1])
+                    if admin_level is not None:
+                        if (max_level is None) or (admin_level > max_level):
+                            max_level = admin_level
+        # If no common ancestor found, set to 2 (country level)
+        if max_level is None:
+            max_level = 2
+        expected_levels.append(max_level)
+    df['expected_level'] = expected_levels
+    print(tabulate(df, headers='keys', tablefmt='psql', showindex=False))
 
 
 if __name__ == "__main__":
@@ -97,8 +119,8 @@ if __name__ == "__main__":
     1 3 valadares valadares viseu
     4 5 valadares valadares
     7 1 "lugar que nao existe" valadares viseu
-    1 8 valadares "sao pedro do sul viseu" viseu
-    1 8 valadares "sao pedro do sul viseu"
+    1 8 valadares "sao pedro do sul" viseu viseu
+    1 8 valadares "sao pedro do sul" viseu
     10 9 valadares "sao pedro do sul" viseu
     """
     # Usar StringIO para simular um ficheiro # TODO: Em vez de criar o data frame assim, usa um csv ou um xlsx
@@ -108,9 +130,5 @@ if __name__ == "__main__":
 
     # compute_expected_level(df)
 
-    # Test row 2 from dados (index 1)
-    row = df.iloc[4]
-    city = row['city_2']
-    target_state = row['state_2']
-    result = city2target_paths(data, city, target_state)
-    print(f"Paths for {city} to {target_state}: {result}")
+    # Compute expected_level for all rows
+    compute_expected_levels_for_all(df, data)
