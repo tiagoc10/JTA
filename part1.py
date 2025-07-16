@@ -47,56 +47,43 @@ def find_last_common_from_end_ignore_first(list1, list2):
     return last_common_idx
 
 
-def city2target_path(df, city, target_state):
-    for index, row in df[5:6].iterrows():
-        city = row[city]
-        target_state = row[target_state]
-
+def city2target_paths(data, city, target_state):
+    if not target_state or pd.isna(target_state):
         parent_paths = find_paths(data, city)
-
         if not parent_paths:
-            print(f"Nenhum caminho encontrado para a cidade '{city}'")
-            return None
+            return "city do not exist"
+        # Return all paths from root to city
+        return parent_paths
 
-        if pd.isna(target_state) or not target_state:
-            # Se não foi passado um estado, devolve todos os caminhos possíveis da cidade até Portugal
-            all_paths = []
-            for path in parent_paths:
-                reversed_path = list(reversed(path)) + ['Portugal']
-                print(reversed_path)
-                all_paths.append(reversed_path)
-            return all_paths
+    parent_paths = find_paths(data, city)
+    if not parent_paths:
+        return "city do not exist"
 
-        else:
-            found_any = False
-            for path in parent_paths:
-                reversed_path = list(reversed(path))
-                if target_state.lower() in [p.lower() for p in reversed_path]:
-                    found_any = True
-                    path_array = reversed_path[:reversed_path.index(target_state) + 1] + ['Portugal']
-                    # print(path_array)
-                    return path_array
-            if not found_any:
-                print(f"Nenhum caminho até o estado '{target_state}' encontrado para a cidade '{city}'")
+    results = []
+    for path in parent_paths:
+        if target_state in path:
+            idx = path.index(target_state)
+            city_idx = len(path) - 1
+            if idx <= city_idx:
+                results.append(path[idx:city_idx+1])
+    if not results:
+        return (
+            f"Nenhum caminho até o estado '{target_state}' "
+            f"encontrado para a cidade '{city}'"
+        )
+    return results
 
 
 def compute_expected_level(df):
-    # Comparar
     city = 'city_1'
     target_state = 'state_1'
-    locs_city1 = city2target_path(df, city, target_state)
-    # print(locs_city1)
+    res1 = city2target_paths(data, df[city][0], df[target_state][0])
+    print(f"Paths for {df[city][0]} to {df[target_state][0]}: {res1}")
     city = 'city_2'
     target_state = 'state_2'
-    locs_city2 = city2target_path(df, city, target_state)
-    print(locs_city2)
-    # pos = find_last_common_from_end_ignore_first(locs_city1, locs_city2)
-    # expected_level = expected_level_associated.get(pos, None)
+    res2 = city2target_paths(data, df[city][0], df[target_state][0])
+    print(f"Paths for {df[city][0]} to {df[target_state][0]}: {res2}")
 
-    # if not expected_level:
-    #     expected_level = 2
-    # df["expected_level"] = expected_level
-    # print(f"expected_level: {expected_level}")
 
 if __name__ == "__main__":
     json_file = "portugal.json"
@@ -119,4 +106,11 @@ if __name__ == "__main__":
     # Preencher colunas ausentes com NaN
     df = df.reindex(columns=['id_1', 'id_2', 'city_1', 'city_2', 'state_1', 'state_2'])
 
-    compute_expected_level(df)
+    # compute_expected_level(df)
+
+    # Test row 2 from dados (index 1)
+    row = df.iloc[4]
+    city = row['city_2']
+    target_state = row['state_2']
+    result = city2target_paths(data, city, target_state)
+    print(f"Paths for {city} to {target_state}: {result}")
