@@ -23,7 +23,7 @@ def city2target_paths(df, data):
 
     is_ambiguous = False
 
-    for idx, row in df[4:5].iterrows():
+    for idx, row in df.iterrows():
         city1 = row['city_1']
         target_state1 = row['state_1']
         city2 = row['city_2']
@@ -53,10 +53,13 @@ def city2target_paths(df, data):
                 # print(city_state_target2)
 
                 equal_index = []
-                min_len = min(len(city_state_target1), len(city_state_target2)) - 1  # Ignora último nível (é a freguesia)
-                city_state_target = min(city_state_target1, city_state_target2)
+                min_len = min(len(city_state_target1), len(city_state_target2))
+                if len(city_state_target1) == len(city_state_target2):
+                    min_len -= 1  # Ignora último nível (é a freguesia) Já que significa que a cidade referenciada é o último nivel possível que é a freguesia
+                city_state_target_min = min(city_state_target1, city_state_target2)
+                city_state_target_max = max(city_state_target1, city_state_target2)
                 for i in range(min_len):
-                    if city_state_target1[i] == city_state_target2[i]:
+                    if city_state_target_min[i] == city_state_target_max[i]:
                         equal_index.append(i)
                 print("done")
 
@@ -73,9 +76,10 @@ def city2target_paths(df, data):
 
                 for path in all_city_paths2:
                     min_len = min(len(city_state_target1), len(path))  # Inclui freguesia
-                    city_state_target = min(city_state_target1, path)
+                    city_state_target_min = min(city_state_target1, path)
+                    city_state_target_max = max(city_state_target1, path)
                     for i in range(min_len):
-                        if city_state_target1[i] == path[i]:
+                        if city_state_target_min[i] == city_state_target_max[i]:
                             equal_index.append(i)
                 # print(f'equal_index: {equal_index}')
 
@@ -91,9 +95,10 @@ def city2target_paths(df, data):
                 equal_index = []
                 for path in all_city_paths1:
                     min_len = min(len(city_state_target2), len(path))  # Inclui freguesia
-                    city_state_target = min(city_state_target2, path)
+                    city_state_target_min = min(city_state_target2, path)
+                    city_state_target_max = max(city_state_target2, path)
                     for i in range(min_len):
-                        if city_state_target2[i] == path[i]:
+                        if city_state_target_min[i] == city_state_target_max[i]:
                             equal_index.append(i)
                 # print(f'equal_index: {equal_index}')
 
@@ -109,9 +114,10 @@ def city2target_paths(df, data):
                 for path1 in all_city_paths1:
                     for path2 in all_city_paths2:
                         min_len = min(len(path1), len(path2))  # Inclui freguesia
-                        city_state_target = min(path1, path2)  # Inclui freguesia
+                        city_state_target_min = min(path1, path2)  # Inclui freguesia
+                        city_state_target_max = max(path1, path2)  # Inclui freguesia
                         for i in range(min_len):
-                            if path1[i] == path2[i]:
+                            if city_state_target_min[i] == city_state_target_max[i]:
                                 equal_index.append(i)
                 # print(f'equal_index: {equal_index}')
 
@@ -122,7 +128,7 @@ def city2target_paths(df, data):
             # print(relevant_index)
             # print(relevant_value)
 
-            expected_level = get_admin_level(data, city_state_target[:relevant_index+1])
+            expected_level = get_admin_level(data, city_state_target_min[:relevant_index+1])
             # print("expected_level")
             # print(expected_level)
 
