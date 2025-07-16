@@ -74,6 +74,7 @@ def last_common_from_start(path1, path2):
 
 def compute_expected_levels_for_all(df, data):
     expected_levels = []
+    ambiguous_flags = []
     for idx, row in df.iterrows():
         city1 = row['city_1']
         state1 = row['state_1']
@@ -81,6 +82,19 @@ def compute_expected_levels_for_all(df, data):
         state2 = row['state_2']
         paths1 = city2target_paths(data, city1, state1)
         paths2 = city2target_paths(data, city2, state2)
+        # Ambiguity check
+        ambiguous = 0
+        # Check for city_1
+        if not state1 or pd.isna(state1):
+            all_paths1 = find_paths(data, city1)
+            if not all_paths1 or len(all_paths1) > 1:
+                ambiguous = 1
+        # Check for city_2
+        if not state2 or pd.isna(state2):
+            all_paths2 = find_paths(data, city2)
+            if not all_paths2 or len(all_paths2) > 1:
+                ambiguous = 1
+        ambiguous_flags.append(ambiguous)
         # If error message, set paths to [['Portugal']] so admin_level 2 is used
         if not isinstance(paths1, list):
             paths1 = [
@@ -104,6 +118,7 @@ def compute_expected_levels_for_all(df, data):
             max_level = 2
         expected_levels.append(max_level)
     df['expected_level'] = expected_levels
+    df['is_ambiguous'] = ambiguous_flags
     print(tabulate(df, headers='keys', tablefmt='psql', showindex=False))
 
 
@@ -121,7 +136,7 @@ if __name__ == "__main__":
     7 1 "lugar que nao existe" valadares viseu
     1 8 valadares "sao pedro do sul" viseu viseu
     1 8 valadares "sao pedro do sul" viseu
-    10 9 valadares "sao pedro do sul" viseu
+    10 9 valadares "sao pedro do sul" "" viseu
     """
     # Usar StringIO para simular um ficheiro # TODO: Em vez de criar o data frame assim, usa um csv ou um xlsx
     df = pd.read_csv(StringIO(dados), sep=' ', header=0, engine='python', quotechar='"')
