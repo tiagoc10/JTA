@@ -40,14 +40,14 @@ chat_engine = CondenseQuestionChatEngine.from_defaults(
 
 print("✅ Chatbot is running. Type 'exit' to quit.\n")
 while True:
-    question = input("❓ You: ")
-    if question.lower() in ["exit", "quit", "sair"]:
-        print("👋 Goodbye!")
+    question = input("User: ")
+    if question.lower() in ["exit", "quit", "goodbye"]:
+        print("Goodbye!")
         break
     response = chat_engine.chat(question)
     if len(response.response) < 20 or "don't know" in response.response.lower():
         # fallback: call GPT directly (without index context)
         fallback_response = llm.chat(question)
-        print(f"🤖 Bot (GPT fallback): {fallback_response.response}\n")
+        print(f"Bot (GPT fallback): {fallback_response.response}\n")
     else:
-        print(f"🤖 Bot: {response.response}\n")
+        print(f"Bot: {response.response}\n")
