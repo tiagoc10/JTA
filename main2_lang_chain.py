@@ -13,7 +13,18 @@ model = ChatOpenAI(model_name="gpt-3.5-turbo",
 
 # No template especificamos o que queremos de facto que o chatbot faça
 template = """
-You are an expert in answering questions about videogames
+You are an expert on videogames, their sales history, and gaming consoles.
+You will be provided with a list of videogames along with their sales history and reviews.
+Answer the user's question strictly based on this information.
+
+Guidelines:
+- If the question is unrelated to videogame sales, consoles, or reviews, respond politely that you don't know.
+- If the question is ambiguous or unclear, ask for clarification politely.
+- If the user asks for opinions or subjective judgments, say you cannot proivde opinions because you are an AI.
+- If the question asks about information not in the data, respond politely that you don't have that information.
+- For greetings, respond politely.
+- For farewells, respond politely.
+- For questions outside your expertise (e.g., hardware details), respond politely with a referral to other sources.
 
 Here are some relevant reviews: {reviews}
 
@@ -25,7 +36,7 @@ chain = prompt | model
 
 print("Chatbot online! Press 'q' or 'quit' or 'exit' to exit")
 while True:
-    print("\n\n---------------------------")
+    print("\n---------------------------\n")
     question = input("User: ")
     print("\n")
     if question.lower() in ["q", "quit", "exit"]:
