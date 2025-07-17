@@ -110,7 +110,7 @@ def city2target_paths(df, data):
             is_ambiguous = False  # Acho que não é ambíguo. Se só é passado o estado, então é o país
             df.loc[idx, 'expected_level'] = expected_level
             df.loc[idx, 'is_ambiguous'] = 1 if is_ambiguous else 0
-        else:  # TODO: Cria uma rotina para tudo o que está neste else. Recebe entrada o target_state1 e target_state2
+        else:
             equal_index, is_ambiguous, city_state_target_min = compare_city_paths(
                 target_state1, target_state2, all_city_paths1, all_city_paths2)
 
