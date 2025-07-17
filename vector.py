@@ -1,4 +1,5 @@
 import os
+import json
 import pandas as pd
 from langchain_openai import OpenAIEmbeddings
 from langchain_chroma import Chroma
@@ -14,26 +15,24 @@ df = pd.read_excel("Nintendo_Cooccurrence_Matrix.xlsx", index_col=0)
 
 embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
 
-if add_documents:
-    documents = []
-    ids = []
+documents = []
+ids = []
 
+# Xlsx data processing
+if add_documents:
     for i, row_product in enumerate(df.index):
         for j, col_product in enumerate(df.columns):
-            # Garante que só tratamos cada par uma vez (para não duplicar, por exemplo, A-B e B-A)
             if j < i:
                 continue
 
             value = df.iloc[i, j]
-
             if row_product == col_product:
-                document_text = f"{row_product} was sold alone {value} times"  # Não convem criar mais frases "parecidas" porque cria redundância e só aumenta o tamanho do banco de dados excusamente
+                document_text = f"{row_product} was sold alone {value} times"
             else:
                 products = sorted([row_product, col_product])
                 document_text = f"{products[0]} was sold together with {products[1]} {value} times"
 
             doc_id = f"{sorted([row_product, col_product])[0]}__{sorted([row_product, col_product])[1]}"
-
             document = Document(
                 page_content=document_text,
                 metadata={
@@ -43,10 +42,69 @@ if add_documents:
                 },
                 id=doc_id
             )
-
             documents.append(document)
             ids.append(doc_id)
 
+# JSON data processing
+if add_documents:
+    with open("dataset.json", "r", encoding="utf-8") as f:
+        product_data = json.load(f)
+
+    for category, products in product_data.items():
+        for product in products:
+            name = product.get("name")
+            times_sold = product.get("times_sold", 0)
+
+            description_parts = []
+
+            if category == "Console":
+                description_parts.append(f"Console {name} was sold {times_sold} times.")
+                for store in ["Store A", "Store B", "Store C"]:
+                    if store in product and product[store] is not None:
+                        description_parts.append(f"Console {name} was sold in {store} {product[store]} times.")
+                    elif store in product and product[store] is None:
+                        description_parts.append(f"{store} did not sell {name} console.")
+
+            elif category == "Games":
+                description_parts.append(f"Game {name} was sold {times_sold} times.")
+                for store in ["Store A", "Store B", "Store C"]:
+                    if store in product and product[store] is not None:
+                        description_parts.append(f"Game {name} was sold in {store} {product[store]} times.")
+                    elif store in product and product[store] is None:
+                        description_parts.append(f"{store} did not sell {name} game.")
+                if "release_date" in product:
+                    description_parts.append(f"Game {name} was released in {product['release_date']}.")
+                if "type" in product:
+                    description_parts.append(f"Game {name} is {product['type']} type.")
+                if "franchise" in product:
+                    description_parts.append(f"{name} game belongs to franchise {product['franchise']}.")
+                if "min_age" in product:
+                    description_parts.append(f"The minimum age required to play {name} is {product['min_age']} years old.")
+
+            elif category == "Accessories":
+                description_parts.append(f"Accessory {name} was sold {times_sold} times.")
+                for store in ["Store A", "Store B", "Store C"]:
+                    if store in product and product[store] is not None:
+                        description_parts.append(f"Accessory {name} was sold in {store} {product[store]} times.")
+                    elif store in product and product[store] is None:
+                        description_parts.append(f"{store} did not sell {name} acessory.")
+                if "category" in product:
+                    description_parts.append(f"Accessory {name} is a {product['category']}.")
+
+            description = " ".join(description_parts)
+
+            doc_id = f"{category}_{name.replace(' ', '_')}"
+            document = Document(
+                page_content=description,
+                metadata={
+                    "name": name,
+                    "category": category,
+                    "times_sold": times_sold
+                },
+                id=doc_id
+            )
+            documents.append(document)
+            ids.append(doc_id)
 
 vector_store = Chroma(
     collection_name="My_data",
@@ -56,6 +114,5 @@ vector_store = Chroma(
 
 if add_documents:
     vector_store.add_documents(documents, ids=ids)
-    # vector_store.persist()
 
 retriever = vector_store.as_retriever(search_kwargs={"k": 5})
