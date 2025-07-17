@@ -1,3 +1,9 @@
 venv
 *.json
 *.csv
+see_output.py
+config.py
+Nintendo_Cooccurrence_Matrix.xlsx
+chroma_db_langchain
+__pycache__
+*.xlsx

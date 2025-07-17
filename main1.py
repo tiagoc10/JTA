@@ -104,11 +104,12 @@ def city2target_paths(df, data):
 
             elif pd.isna(target_state1) and pd.isna(target_state2):
                 all_city_paths1 = [['Portugal'] + path for path in all_city_paths1]  # Acrescentar 'Portugal' em cada linha subarray
-                is_ambiguous = True
                 # print(all_city_paths1)
 
                 all_city_paths2 = [['Portugal'] + path for path in all_city_paths2]  # Acrescentar 'Portugal' em cada linha subarray
                 # print(all_city_paths2)
+
+                is_ambiguous = True if len(all_city_paths1) > 1 or len(all_city_paths2) > 1 else False
 
                 equal_index = []
                 for path1 in all_city_paths1:
@@ -172,6 +173,7 @@ if __name__ == "__main__":
     1;8;valadares;"sao pedro do sul";viseu;viseu
     1;8;valadares;"sao pedro do sul";viseu;
     10;9;valadares;"sao pedro do sul";;viseu
+    12;13;;;Porto;Porto
     """
 
     df = pd.read_csv(StringIO(dataframe), sep=';', header=0)
