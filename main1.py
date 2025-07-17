@@ -19,6 +19,71 @@ def find_paths(data, target_city, current_path=None):
     return found_paths
 
 
+def compare_city_paths(target_state1, target_state2, all_city_paths1, all_city_paths2):
+    equal_index = []
+    is_ambiguous = False
+
+    if not pd.isna(target_state1) and not pd.isna(target_state2):
+        is_ambiguous = False
+        path1 = next((path for path in all_city_paths1 if target_state1 in path), None)
+        city_state_target1 = ['Portugal'] + path1
+
+        path2 = next((path for path in all_city_paths2 if target_state2 in path), None)
+        city_state_target2 = ['Portugal'] + path2
+
+        min_len = min(len(city_state_target1), len(city_state_target2))
+        if len(city_state_target1) == len(city_state_target2):
+            min_len -= 1  # Ignorar último nível (freguesia)
+
+        city_state_target_min = min(city_state_target1, city_state_target2)
+        city_state_target_max = max(city_state_target1, city_state_target2)
+
+        for i in range(min_len):
+            if city_state_target_min[i] == city_state_target_max[i]:
+                equal_index.append(i)
+
+    elif (pd.isna(target_state1) and not pd.isna(target_state2)) or (pd.isna(target_state2) and not pd.isna(target_state1)):
+        if pd.isna(target_state1):
+            known_target = target_state2
+            known_paths = all_city_paths2
+            unknown_paths = all_city_paths1
+        else:
+            known_target = target_state1
+            known_paths = all_city_paths1
+            unknown_paths = all_city_paths2
+
+        known_path = next((path for path in known_paths if known_target in path), None)
+        known_path = ['Portugal'] + known_path
+        unknown_paths = [['Portugal'] + path for path in unknown_paths]
+
+        is_ambiguous = len(unknown_paths) > 1
+        equal_index = []
+
+        for path in unknown_paths:
+            min_len = min(len(known_path), len(path))
+            city_state_target_min = min(known_path, path)
+            path_max = max(known_path, path)
+            for i in range(min_len):
+                if city_state_target_min[i] == path_max[i]:
+                    equal_index.append(i)
+
+    elif pd.isna(target_state1) and pd.isna(target_state2):
+        all_city_paths1 = [['Portugal'] + path for path in all_city_paths1]
+        all_city_paths2 = [['Portugal'] + path for path in all_city_paths2]
+        is_ambiguous = len(all_city_paths1) > 1 or len(all_city_paths2) > 1
+
+        for path1 in all_city_paths1:
+            for path2 in all_city_paths2:
+                min_len = min(len(path1), len(path2))
+                city_state_target_min = min(path1, path2)
+                city_state_target_max = max(path1, path2)
+                for i in range(min_len):
+                    if city_state_target_min[i] == city_state_target_max[i]:
+                        equal_index.append(i)
+
+    return equal_index, is_ambiguous, city_state_target_min
+
+
 def city2target_paths(df, data):
 
     is_ambiguous = False
@@ -40,99 +105,16 @@ def city2target_paths(df, data):
             df.loc[idx, 'is_ambiguous'] = 1 if is_ambiguous else 0
             # print(expected_level)
         elif not all_city_paths1 and not all_city_paths2:
-            raise ValueError(f"No cities provided:\nCity 1: {city1} (State: {target_state1}) | City 2: {city2} (State: {target_state2})")  # TODO: Verificar isto
-        else:
-            if not pd.isna(target_state1) and not pd.isna(target_state2):
-                is_ambiguous = False
-                path1 = next((path for path in all_city_paths1 if target_state1 in path), None)
-                city_state_target1 = ['Portugal'] + path1
-                # print(city_state_target1)
+            # Acho que a ideia acaba por ser esta. Se não é passado nenhuma cidade e é passado apenas o estado, então o maior nível o país
+            expected_level = 2
+            is_ambiguous = False  # Acho que não é ambíguo. Se só é passado o estado, então é o país
+            df.loc[idx, 'expected_level'] = expected_level
+            df.loc[idx, 'is_ambiguous'] = 1 if is_ambiguous else 0
+        else:  # TODO: Cria uma rotina para tudo o que está neste else. Recebe entrada o target_state1 e target_state2
+            equal_index, is_ambiguous, city_state_target_min = compare_city_paths(
+                target_state1, target_state2, all_city_paths1, all_city_paths2)
 
-                path2 = next((path for path in all_city_paths2 if target_state2 in path), None)
-                city_state_target2 = ['Portugal'] + path2
-                # print(city_state_target2)
-
-                equal_index = []
-                min_len = min(len(city_state_target1), len(city_state_target2))
-                if len(city_state_target1) == len(city_state_target2):
-                    min_len -= 1  # Ignora último nível (é a freguesia) Já que significa que a cidade referenciada é o último nivel possível que é a freguesia
-                city_state_target_min = min(city_state_target1, city_state_target2)
-                city_state_target_max = max(city_state_target1, city_state_target2)
-                for i in range(min_len):
-                    if city_state_target_min[i] == city_state_target_max[i]:
-                        equal_index.append(i)
-                print("done")
-
-            elif pd.isna(target_state2) and not pd.isna(target_state1):
-                path1 = next((path for path in all_city_paths1 if target_state1 in path), None)
-                city_state_target1 = ['Portugal'] + path1
-                # print(city_state_target1)
-
-                # all_city_paths2
-                all_city_paths2 = [['Portugal'] + path for path in all_city_paths2]  # Acrescentar 'Portugal' em cada linha subarray
-                is_ambiguous = True if len(all_city_paths2) > 1 else False
-                # print(all_city_paths2)
-                equal_index = []
-
-                for path in all_city_paths2:
-                    min_len = min(len(city_state_target1), len(path))  # Inclui freguesia
-                    city_state_target_min = min(city_state_target1, path)
-                    city_state_target_max = max(city_state_target1, path)
-                    for i in range(min_len):
-                        if city_state_target_min[i] == city_state_target_max[i]:
-                            equal_index.append(i)
-                # print(f'equal_index: {equal_index}')
-
-            elif pd.isna(target_state1) and not pd.isna(target_state2):
-                path2 = next((path for path in all_city_paths2 if target_state2 in path), None)
-                city_state_target2 = ['Portugal'] + path2
-                # print(city_state_target2)
-
-                # all_city_paths1
-                all_city_paths1 = [['Portugal'] + path for path in all_city_paths1]  # Acrescentar 'Portugal' em cada linha subarray
-                is_ambiguous = True if len(all_city_paths1) > 1 else False
-                # print(all_city_paths1)
-                equal_index = []
-                for path in all_city_paths1:
-                    min_len = min(len(city_state_target2), len(path))  # Inclui freguesia
-                    city_state_target_min = min(city_state_target2, path)
-                    city_state_target_max = max(city_state_target2, path)
-                    for i in range(min_len):
-                        if city_state_target_min[i] == city_state_target_max[i]:
-                            equal_index.append(i)
-                # print(f'equal_index: {equal_index}')
-
-            elif pd.isna(target_state1) and pd.isna(target_state2):
-                all_city_paths1 = [['Portugal'] + path for path in all_city_paths1]  # Acrescentar 'Portugal' em cada linha subarray
-                # print(all_city_paths1)
-
-                all_city_paths2 = [['Portugal'] + path for path in all_city_paths2]  # Acrescentar 'Portugal' em cada linha subarray
-                # print(all_city_paths2)
-
-                is_ambiguous = True if len(all_city_paths1) > 1 or len(all_city_paths2) > 1 else False
-
-                equal_index = []
-                for path1 in all_city_paths1:
-                    for path2 in all_city_paths2:
-                        min_len = min(len(path1), len(path2))  # Inclui freguesia
-                        city_state_target_min = min(path1, path2)  # Inclui freguesia
-                        city_state_target_max = max(path1, path2)  # Inclui freguesia
-                        for i in range(min_len):
-                            if city_state_target_min[i] == city_state_target_max[i]:
-                                equal_index.append(i)
-                # print(f'equal_index: {equal_index}')
-
-            relevant_index = max(equal_index)
-            # Acho que é indiferente ser city_state_target1 ou city_state_target2...
-            # Estás a ver onde são iguais
-            # relevant_value = city_state_target[relevant_index]
-            # print(relevant_index)
-            # print(relevant_value)
-
-            expected_level = get_admin_level(data, city_state_target_min[:relevant_index+1])
-            # print("expected_level")
-            # print(expected_level)
-
+            expected_level = get_admin_level(data, city_state_target_min[:max(equal_index)+1])
             df.loc[idx, 'expected_level'] = expected_level
             df.loc[idx, 'is_ambiguous'] = 1 if is_ambiguous else 0
     return df
