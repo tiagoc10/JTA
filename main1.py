@@ -98,14 +98,9 @@ def city2target_paths(df, data):
         all_city_paths1 = find_paths(data, city1)
         all_city_paths2 = find_paths(data, city2)
 
-        if (not all_city_paths1 and all_city_paths2) or (all_city_paths1 and not all_city_paths2):  # Verificar se a lista está vazia
-            expected_level = 2
-            is_ambiguous = False
-            df.loc[idx, 'expected_level'] = expected_level
-            df.loc[idx, 'is_ambiguous'] = 1 if is_ambiguous else 0
-            # print(expected_level)
-        elif not all_city_paths1 and not all_city_paths2:
+        if not all_city_paths1 or not all_city_paths2:
             # Acho que a ideia acaba por ser esta. Se não é passado nenhuma cidade e é passado apenas o estado, então o maior nível o país
+            # Ou se um all_city_paths é vazio, então o maior nível é o país
             expected_level = 2
             is_ambiguous = False  # Acho que não é ambíguo. Se só é passado o estado, então é o país
             df.loc[idx, 'expected_level'] = expected_level
