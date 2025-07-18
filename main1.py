@@ -134,6 +134,21 @@ def city2target_paths(df, data):
             else:  # Caso não tenha sido encontrado nenhum caminho
                 df.loc[idx, 'expected_level'] = city_state_target_min
                 df.loc[idx, 'is_ambiguous'] = city_state_target_min
+
+    def try_int(val):
+        try:
+            # Verifica se é um número que pode ser convertido
+            if pd.notna(val) and str(val).strip().isdigit():
+                return int(val)
+            # Se for um float que representa um número inteiro (ex: 2.0)
+            if isinstance(val, float) and val.is_integer():
+                return int(val)
+        except:
+            pass
+        return val  # mantém original se não for número
+
+    df['expected_level'] = df['expected_level'].apply(try_int)
+    df['is_ambiguous'] = df['is_ambiguous'].apply(try_int)
     return df
 
 
