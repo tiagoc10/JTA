@@ -23,7 +23,10 @@ def compare_city_paths(target_state1, target_state2, all_city_paths1, all_city_p
     equal_index = []
     is_ambiguous = False
 
-    if not pd.isna(target_state1) and not pd.isna(target_state2):
+    target_state1_nan = pd.isna(target_state1)
+    target_state2_nan = pd.isna(target_state2)
+
+    if not target_state1_nan and not target_state2_nan:
         is_ambiguous = False
 
         paths1 = [path for path in all_city_paths1 if target_state1 in path]  # Todos os caminhos com o target_state1
@@ -46,8 +49,8 @@ def compare_city_paths(target_state1, target_state2, all_city_paths1, all_city_p
         elif path1 is None and path2 is None:
             return None, None, 'both paths not found'
 
-        city_state_target1 = ['Portugal'] + path1
-        city_state_target2 = ['Portugal'] + path2
+        city_state_target1 = ['Country'] + path1
+        city_state_target2 = ['Country'] + path2
 
         min_len = min(len(city_state_target1), len(city_state_target2))
         if len(city_state_target1) == len(city_state_target2):
@@ -60,8 +63,8 @@ def compare_city_paths(target_state1, target_state2, all_city_paths1, all_city_p
             if city_state_target_min[i] == city_state_target_max[i]:
                 equal_index.append(i)
 
-    elif (pd.isna(target_state1) and not pd.isna(target_state2)) or (pd.isna(target_state2) and not pd.isna(target_state1)):
-        if pd.isna(target_state1):
+    elif (target_state1_nan and not target_state2_nan) or (target_state2_nan and not target_state1_nan):
+        if target_state1_nan:
             known_target = target_state2
             known_paths = all_city_paths2
             unknown_paths = all_city_paths1
@@ -71,8 +74,8 @@ def compare_city_paths(target_state1, target_state2, all_city_paths1, all_city_p
             unknown_paths = all_city_paths2
 
         known_path = next((path for path in known_paths if known_target in path), None)
-        known_path = ['Portugal'] + known_path
-        unknown_paths = [['Portugal'] + path for path in unknown_paths]
+        known_path = ['Country'] + known_path
+        unknown_paths = [['Country'] + path for path in unknown_paths]
 
         is_ambiguous = len(unknown_paths) > 1
         equal_index = []
@@ -85,11 +88,12 @@ def compare_city_paths(target_state1, target_state2, all_city_paths1, all_city_p
                 if city_state_target_min[i] == path_max[i]:
                     equal_index.append(i)
 
-    elif pd.isna(target_state1) and pd.isna(target_state2):
-        all_city_paths1 = [['Portugal'] + path for path in all_city_paths1]
-        all_city_paths2 = [['Portugal'] + path for path in all_city_paths2]
-        is_ambiguous = len(all_city_paths1) > 1 or len(all_city_paths2) > 1
+    elif target_state1_nan and target_state2_nan:
+        all_city_paths1 = [['Country'] + path for path in all_city_paths1]
+        all_city_paths2 = [['Country'] + path for path in all_city_paths2]
 
+        # Se houver mais do que um caminho, seja numa cidade ou noutra, então é ambíguo
+        is_ambiguous = len(all_city_paths1) > 1 or len(all_city_paths2) > 1
         for path1 in all_city_paths1:
             for path2 in all_city_paths2:
                 min_len = min(len(path1), len(path2))
@@ -106,12 +110,15 @@ def city2target_paths(df, data):
 
     is_ambiguous = False
 
-    for idx, row in df.iterrows():
-        city1 = row['city_1']
-        target_state1 = row['state_1']
-        city2 = row['city_2']
-        target_state2 = row['state_2']
+    expected_levels = []
+    is_ambiguous_list = []
 
+    # for idx, row in df.iterrows():
+    for row in df.itertuples(index=False):  # df.iterrows() is not efficient for large DataFrames
+        city1 = row.city_1
+        target_state1 = row.state_1
+        city2 = row.city_2
+        target_state2 = row.state_2
         # Find all paths for city1 and city2
         all_city_paths1 = find_paths(data, city1)
         all_city_paths2 = find_paths(data, city2)
@@ -121,34 +128,22 @@ def city2target_paths(df, data):
             # Ou se um all_city_paths é vazio, então o maior nível é o país
             expected_level = 2
             is_ambiguous = False  # Acho que não é ambíguo. Se só é passado o estado, então é o país
-            df.loc[idx, 'expected_level'] = expected_level
-            df.loc[idx, 'is_ambiguous'] = 1 if is_ambiguous else 0
+            expected_levels.append(expected_level)
+            is_ambiguous_list.append(1 if is_ambiguous else 0)
         else:  # TODO: Cria uma rotina para tudo o que está neste else. Recebe entrada o target_state1 e target_state2
             equal_index, is_ambiguous, city_state_target_min = compare_city_paths(
                 target_state1, target_state2, all_city_paths1, all_city_paths2)
 
             if equal_index is not None and is_ambiguous is not None:
                 expected_level = get_admin_level(data, city_state_target_min[:max(equal_index)+1])
-                df.loc[idx, 'expected_level'] = expected_level
-                df.loc[idx, 'is_ambiguous'] = 1 if is_ambiguous else 0
+                expected_levels.append(expected_level)
+                is_ambiguous_list.append(1 if is_ambiguous else 0)
             else:  # Caso não tenha sido encontrado nenhum caminho
-                df.loc[idx, 'expected_level'] = city_state_target_min
-                df.loc[idx, 'is_ambiguous'] = city_state_target_min
+                expected_levels.append(city_state_target_min)
+                is_ambiguous_list.append(city_state_target_min)
 
-    def try_int(val):
-        try:
-            # Verifica se é um número que pode ser convertido
-            if pd.notna(val) and str(val).strip().isdigit():
-                return int(val)
-            # Se for um float que representa um número inteiro (ex: 2.0)
-            if isinstance(val, float) and val.is_integer():
-                return int(val)
-        except:
-            pass
-        return val  # mantém original se não for número
-
-    df['expected_level'] = df['expected_level'].apply(try_int)
-    df['is_ambiguous'] = df['is_ambiguous'].apply(try_int)
+    df['expected_level'] = expected_levels
+    df['is_ambiguous'] = is_ambiguous_list
     return df
 
 
@@ -158,8 +153,8 @@ def get_admin_level(data, path):
     """
 
     node = data
-    # Remove 'Portugal' if it's the first element. Which it is
-    if path and path[0] == 'Portugal':    # TODO: Não fazer assim.. Chegar mesmo ao admin_level=2 logo pelo primeiro
+    # Remove 'Country' if it's the first element. Which it is
+    if path and path[0] == 'Country':    # TODO: Não fazer assim.. Chegar mesmo ao admin_level=2 logo pelo primeiro
         path = path[1:]
 
     if len(path) > 0:
@@ -168,7 +163,7 @@ def get_admin_level(data, path):
                 node = node['children'][name]
                 admin_level = node.get('admin_level')
     else:
-        return 2  # Significa que path é [] porque só tinha 'Portugal', então é 2
+        return 2  # Significa que path é [] porque só tinha 'Country', então é 2
 
     return admin_level
 
