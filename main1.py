@@ -25,10 +25,28 @@ def compare_city_paths(target_state1, target_state2, all_city_paths1, all_city_p
 
     if not pd.isna(target_state1) and not pd.isna(target_state2):
         is_ambiguous = False
-        path1 = next((path for path in all_city_paths1 if target_state1 in path), None)
-        city_state_target1 = ['Portugal'] + path1
 
-        path2 = next((path for path in all_city_paths2 if target_state2 in path), None)
+        paths1 = [path for path in all_city_paths1 if target_state1 in path]  # Todos os caminhos com o target_state1
+        paths2 = [path for path in all_city_paths2 if target_state2 in path]  # Todos os caminhos com o target_state2
+
+        if len(paths1) > 1:  # Exemplo do ponta do sol-madeira entende-se
+            paths1 = [max(paths1, key=len)]  # Get the longest path
+            is_ambiguous = True
+        if len(paths2) > 1:
+            paths2 = [max(paths2, key=len)]  # Get the longest path
+            is_ambiguous = True
+
+        path1 = next((path for path in paths1 if target_state1 in path), None)
+        path2 = next((path for path in paths2 if target_state2 in path), None)
+
+        if path1 is None and path2:
+            return None, None, 'path1 not found'
+        elif path2 is None and path1:
+            return None, None, 'path2 not found'
+        elif path1 is None and path2 is None:
+            return None, None, 'both paths not found'
+
+        city_state_target1 = ['Portugal'] + path1
         city_state_target2 = ['Portugal'] + path2
 
         min_len = min(len(city_state_target1), len(city_state_target2))
@@ -109,9 +127,13 @@ def city2target_paths(df, data):
             equal_index, is_ambiguous, city_state_target_min = compare_city_paths(
                 target_state1, target_state2, all_city_paths1, all_city_paths2)
 
-            expected_level = get_admin_level(data, city_state_target_min[:max(equal_index)+1])
-            df.loc[idx, 'expected_level'] = expected_level
-            df.loc[idx, 'is_ambiguous'] = 1 if is_ambiguous else 0
+            if equal_index is not None and is_ambiguous is not None:
+                expected_level = get_admin_level(data, city_state_target_min[:max(equal_index)+1])
+                df.loc[idx, 'expected_level'] = expected_level
+                df.loc[idx, 'is_ambiguous'] = 1 if is_ambiguous else 0
+            else:  # Caso não tenha sido encontrado nenhum caminho
+                df.loc[idx, 'expected_level'] = city_state_target_min
+                df.loc[idx, 'is_ambiguous'] = city_state_target_min
     return df
 
 
@@ -151,6 +173,8 @@ if __name__ == "__main__":
     1;8;valadares;"sao pedro do sul";viseu;
     10;9;valadares;"sao pedro do sul";;viseu
     12;13;;;Porto;Porto
+    1;2;valadares;valadares;aveiro;porto
+    15;16;ponta do sol;ponta do sol;madeira;madeira
     """
 
     df = pd.read_csv(StringIO(dataframe), sep=';', header=0)
