@@ -177,29 +177,50 @@ def get_admin_level(data, path):
     return admin_level
 
 
+def validate_dataframe(df_path=None, from_text=None):
+    """
+    """
+    if df_path:
+        if df_path.endswith('.csv'):
+            df = pd.read_csv(df_path)
+        elif df_path.endswith('.xlsx'):
+            df = pd.read_excel(df_path)
+        else:
+            raise ValueError("Unsupported file format. Use .csv or .xlsx")
+
+    elif from_text:
+        df = pd.read_csv(StringIO(from_text), sep=',', header=0)
+        df = df.reindex(columns=['id_1', 'id_2',
+                                 'city_1', 'city_2',
+                                 'state_1', 'state_2'])
+    else:
+        raise ValueError("No DataFrame source provided. Use df_path or\
+                            from_text")
+
+    return df
+
+
 if __name__ == "__main__":
     json_file = "portugal.json"
 
     with open(json_file, 'r', encoding='utf-8') as f:
         data = json.load(f)
 
-    dataframe = """id_1;id_2;city_1;city_2;state_1;state_2
-    1;2;valadares;valadares;viseu;porto
-    1;3;valadares;valadares;viseu;
-    4;5;valadares;valadares;;
-    7;1;"lugar que nao existe";valadares;viseu;
-    1;8;valadares;"sao pedro do sul";viseu;viseu
-    1;8;valadares;"sao pedro do sul";viseu;
-    10;9;valadares;"sao pedro do sul";;viseu
-    12;13;;;Porto;Porto
-    1;2;valadares;valadares;aveiro;porto
-    15;16;ponta do sol;ponta do sol;madeira;madeira
+    dataframe = """id_1,id_2,city_1,city_2,state_1,state_2
+    1,2,valadares,valadares,viseu,porto
+    1,3,valadares,valadares,viseu,
+    4,5,valadares,valadares,,
+    7,1,"lugar que nao existe",valadares,viseu,
+    1,8,valadares,"sao pedro do sul",viseu,viseu
+    1,8,valadares,"sao pedro do sul",viseu,
+    10,9,valadares,"sao pedro do sul",,viseu
+    12,13,,,Porto,Porto
+    1,2,valadares,valadares,aveiro,porto
+    15,16,ponta do sol,ponta do sol,madeira,madeira
     """
+    # df = validate_dataframe(from_text=dataframe)
 
-    df = pd.read_csv(StringIO(dataframe), sep=';', header=0)
-    df = df.reindex(columns=['id_1', 'id_2',
-                             'city_1', 'city_2',
-                             'state_1', 'state_2'])
+    df = validate_dataframe(df_path="dataframe.xlsx")  # or ".xlsx"
 
     df = city2target_paths(df, data)
     print(df)
