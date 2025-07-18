@@ -18,7 +18,8 @@ def find_paths(data, target_city, current_path=None):
     return found_paths
 
 
-def compare_city_paths(target_state1, target_state2, all_city_paths1, all_city_paths2):
+def compare_city_paths(target_state1, target_state2, all_city_paths1,
+                       all_city_paths2):
     equal_index = []
     is_ambiguous = False
 
@@ -28,8 +29,10 @@ def compare_city_paths(target_state1, target_state2, all_city_paths1, all_city_p
     if not target_state1_nan and not target_state2_nan:
         is_ambiguous = False
 
-        paths1 = [path for path in all_city_paths1 if target_state1 in path]  # Todos os caminhos com o target_state1
-        paths2 = [path for path in all_city_paths2 if target_state2 in path]  # Todos os caminhos com o target_state2
+        # Todos os caminhos com o target_state1
+        paths1 = [path for path in all_city_paths1 if target_state1 in path]
+        # Todos os caminhos com o target_state2
+        paths2 = [path for path in all_city_paths2 if target_state2 in path]
 
         if len(paths1) > 1:  # Exemplo do ponta do sol-madeira entende-se
             paths1 = [max(paths1, key=len)]  # Get the longest path
@@ -62,7 +65,8 @@ def compare_city_paths(target_state1, target_state2, all_city_paths1, all_city_p
             if city_state_target_min[i] == city_state_target_max[i]:
                 equal_index.append(i)
 
-    elif (target_state1_nan and not target_state2_nan) or (target_state2_nan and not target_state1_nan):
+    elif (target_state1_nan and not target_state2_nan) or\
+            (target_state2_nan and not target_state1_nan):
         if target_state1_nan:
             known_target = target_state2
             known_paths = all_city_paths2
@@ -72,7 +76,7 @@ def compare_city_paths(target_state1, target_state2, all_city_paths1, all_city_p
             known_paths = all_city_paths1
             unknown_paths = all_city_paths2
 
-        known_path = next((path for path in known_paths if known_target in path), None)
+        known_path = next((path for path in known_paths if known_target in path), None)  # noqa: E501
         known_path = ['Country'] + known_path
         unknown_paths = [['Country'] + path for path in unknown_paths]
 
@@ -91,7 +95,8 @@ def compare_city_paths(target_state1, target_state2, all_city_paths1, all_city_p
         all_city_paths1 = [['Country'] + path for path in all_city_paths1]
         all_city_paths2 = [['Country'] + path for path in all_city_paths2]
 
-        # Se houver mais do que um caminho, seja numa cidade ou noutra, então é ambíguo
+        # Se houver mais do que um caminho, seja numa cidade ou noutra,
+        # então é ambíguo
         is_ambiguous = len(all_city_paths1) > 1 or len(all_city_paths2) > 1
         for path1 in all_city_paths1:
             for path2 in all_city_paths2:
@@ -112,8 +117,9 @@ def city2target_paths(df, data):
     expected_levels = []
     is_ambiguous_list = []
 
-    # for idx, row in df.iterrows():
-    for row in df.itertuples(index=False):  # df.iterrows() is not efficient for large DataFrames
+    # for idx, row in df.iterrows()
+    # However, # df.iterrows() is not efficient for large DataFrames:
+    for row in df.itertuples(index=False):
         city1 = row.city_1
         target_state1 = row.state_1
         city2 = row.city_2
@@ -123,18 +129,27 @@ def city2target_paths(df, data):
         all_city_paths2 = find_paths(data, city2)
 
         if not all_city_paths1 or not all_city_paths2:
-            # Acho que a ideia acaba por ser esta. Se não é passado nenhuma cidade e é passado apenas o estado, então o maior nível o país
+            # Acho que a ideia acaba por ser esta.
+            # Se não é passado nenhuma cidade e é passado apenas o estado,
+            #   então o maior nível o país
             # Ou se um all_city_paths é vazio, então o maior nível é o país
             expected_level = 2
-            is_ambiguous = False  # Acho que não é ambíguo. Se só é passado o estado, então é o país
+            # Acho que não é ambíguo. Se só é passado o estado, então é o país
+            is_ambiguous = False
             expected_levels.append(expected_level)
             is_ambiguous_list.append(1 if is_ambiguous else 0)
-        else:  # TODO: Cria uma rotina para tudo o que está neste else. Recebe entrada o target_state1 e target_state2
-            equal_index, is_ambiguous, city_state_target_min = compare_city_paths(
-                target_state1, target_state2, all_city_paths1, all_city_paths2)
+        else:
+            equal_index, is_ambiguous, city_state_target_min =\
+                compare_city_paths(target_state1, target_state2,
+                                   all_city_paths1, all_city_paths2)
 
             if equal_index is not None and is_ambiguous is not None:
-                expected_level = get_admin_level(data, city_state_target_min[:max(equal_index)+1])
+                path = city_state_target_min[:max(equal_index)+1]
+                if path and path[0] == 'Country':
+                    # Remove 'Country' if it's the first element. Which it is
+                    path = path[1:]
+                expected_level = get_admin_level(data, path)
+
                 expected_levels.append(expected_level)
                 is_ambiguous_list.append(1 if is_ambiguous else 0)
             else:  # Caso não tenha sido encontrado nenhum caminho
@@ -148,20 +163,17 @@ def city2target_paths(df, data):
 
 def get_admin_level(data, path):
     """
-    Traverse the JSON tree following the path, return 'admin_level' at the end of the path.
+    Traverse the JSON tree following the path, return 'admin_level'\
+        at the end of the path.
     """
     node = data
-    # Remove 'Country' if it's the first element. Which it is
-    if path and path[0] == 'Country':
-        path = path[1:]
-
     if len(path) > 0:
         for name in path:
             if 'children' in node and name in node['children']:
                 node = node['children'][name]
                 admin_level = node.get('admin_level')
     else:
-        return 2  # Significa que path é [] porque só tinha 'Country', então é 2
+        return 2  # path is empty [] -> Only 'Country' was present, so is 2
     return admin_level
 
 
@@ -185,8 +197,9 @@ if __name__ == "__main__":
     """
 
     df = pd.read_csv(StringIO(dataframe), sep=';', header=0)
-    df = df.reindex(columns=['id_1', 'id_2', 'city_1', 'city_2', 'state_1', 'state_2'])
+    df = df.reindex(columns=['id_1', 'id_2',
+                             'city_1', 'city_2',
+                             'state_1', 'state_2'])
 
-    # print(df)
     df = city2target_paths(df, data)
     print(df)
