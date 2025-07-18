@@ -220,7 +220,7 @@ if __name__ == "__main__":
     """
     # df = validate_dataframe(from_text=dataframe)
 
-    df = validate_dataframe(df_path="dataframe.xlsx")  # or ".xlsx"
+    df = validate_dataframe(df_path="dataframe.csv")  # or ".xlsx"
 
     df = city2target_paths(df, data)
     print(df)
