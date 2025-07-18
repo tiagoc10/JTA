@@ -4,17 +4,16 @@ import pandas as pd
 
 
 def find_paths(data, target_city, current_path=None):
-    '''
-        Required recursive search
-    '''
     found_paths = []
     if current_path is None:
-        current_path = []  # Start with an empty path if not provided
+        current_path = []
+
     for name, details in data.get("children", {}).items():
-        new_path = current_path + [name]
+        current_path.append(name)
         if name == target_city:
-            found_paths.append(new_path)
-        found_paths += find_paths(details, target_city, new_path)
+            found_paths.append(list(current_path))
+        found_paths.extend(find_paths(details, target_city, current_path))
+        current_path.pop()
 
     return found_paths
 
@@ -151,10 +150,9 @@ def get_admin_level(data, path):
     """
     Traverse the JSON tree following the path, return 'admin_level' at the end of the path.
     """
-
     node = data
     # Remove 'Country' if it's the first element. Which it is
-    if path and path[0] == 'Country':    # TODO: Não fazer assim.. Chegar mesmo ao admin_level=2 logo pelo primeiro
+    if path and path[0] == 'Country':
         path = path[1:]
 
     if len(path) > 0:
@@ -164,7 +162,6 @@ def get_admin_level(data, path):
                 admin_level = node.get('admin_level')
     else:
         return 2  # Significa que path é [] porque só tinha 'Country', então é 2
-
     return admin_level
 
 
