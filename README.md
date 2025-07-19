@@ -5,3 +5,4 @@ Pontos a melhorar:
 - Melhorar eficiência do código.
 - Talvez na procura recursiva, tentar ir por outra abordagem. A maneira que se está a fazer agora implica que haja muitas listas em recursão. Talvez usar cache ou assim...
 - Avaliar outro tipo de caminhos
+- Testes unitários

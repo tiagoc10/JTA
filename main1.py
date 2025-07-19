@@ -64,7 +64,8 @@ def compare_city_paths(target_state1, target_state2, all_city_paths1,
             # Se os caminhos são iguais e só existe um caminho.
             # Por ex: "aveleda-aveleda-lousada-lousada"
             equal_index.append(len(paths1[0])-1)
-            return equal_index, False, paths1[0]  # Return the single path if they are the same
+            # Return the single path if they are the same
+            return equal_index, False, paths1[0]
 
         if len(paths1) > 1:  # Exemplo do ponta do sol-madeira entende-se
             paths1 = [max(paths1, key=len)]  # Get the longest path
@@ -72,9 +73,6 @@ def compare_city_paths(target_state1, target_state2, all_city_paths1,
         if len(paths2) > 1:
             paths2 = [max(paths2, key=len)]  # Get the longest path
             is_ambiguous = True
-
-        # path1 = next((path for path in paths1 if target_state1 in path), None)
-        # path2 = next((path for path in paths2 if target_state2 in path), None)
 
         path1 = paths1[0] if paths1 else None
         path2 = paths2[0] if paths2 else None
