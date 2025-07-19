@@ -8,10 +8,8 @@ os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 
 model = ChatOpenAI(model_name="gpt-3.5-turbo",
                    temperature=0.3,        # Menor temperature → respostas mais focadas
-                #    max_tokens=150          # Limite de tokens na resposta
                    )
 
-# No template especificamos o que queremos de facto que o chatbot faça
 template = """
 You are an expert on videogames, their sales history, and gaming consoles.
 You will be provided with a list of videogames along with their sales history and reviews.
@@ -27,7 +25,7 @@ Guidelines:
 - If the question asks about information not in the data, respond politely that you don't have that information.
 - For greetings, respond politely.
 - For farewells, respond politely.
-- For questions outside your expertise (e.g., hardware details), respond politely with a referral to other sources.
+- For questions outside your expertise, respond politely that you dont have the related information.
 
 Here are some relevant reviews: {reviews}
 
@@ -43,7 +41,8 @@ while True:
     question = input("User: ")
     print("\n")
     if question.lower() in ["q", "quit", "exit"]:
+        print("Exiting the chatbot. Goodbye!")
         break
     reviews = retriever.invoke(question)  # Retrieve relevant documents based on the question
     result = chain.invoke({"reviews": reviews, "question": question})
-    print(result.content)  # Print the answer from the model
+    print(f"Bot: {result.content}")  # Print the answer from the model
