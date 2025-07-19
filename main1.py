@@ -22,6 +22,7 @@ def compare_city_paths(target_state1, target_state2, all_city_paths1,
                        all_city_paths2):
     equal_index = []
     is_ambiguous = False
+    city_state_target_min = []
 
     target_state1_nan = pd.isna(target_state1)
     target_state2_nan = pd.isna(target_state2)
@@ -45,11 +46,11 @@ def compare_city_paths(target_state1, target_state2, all_city_paths1,
         path2 = next((path for path in paths2 if target_state2 in path), None)
 
         if path1 is None and path2:
-            return None, None, 'path1 not found'
+            return [], True, 'path1 not found'
         elif path2 is None and path1:
-            return None, None, 'path2 not found'
+            return [], True, 'path2 not found'
         elif path1 is None and path2 is None:
-            return None, None, 'both paths not found'
+            return [], True, 'both paths not found'
 
         city_state_target1 = ['Country'] + path1
         city_state_target2 = ['Country'] + path2
@@ -143,7 +144,7 @@ def city2target_paths(df, data):
                 compare_city_paths(target_state1, target_state2,
                                    all_city_paths1, all_city_paths2)
 
-            if equal_index is not None and is_ambiguous is not None:
+            if len(equal_index) > 0:
                 path = city_state_target_min[:max(equal_index)+1]
                 if path and path[0] == 'Country':
                     # Remove 'Country' if it's the first element. Which it is

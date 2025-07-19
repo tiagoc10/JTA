@@ -7,3 +7,4 @@ Nintendo_Cooccurrence_Matrix.xlsx
 chroma_db_langchain
 __pycache__
 *.xlsx
+tests
