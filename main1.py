@@ -4,6 +4,18 @@ import pandas as pd
 
 
 def find_paths(data, target_city, current_path=None):
+    """
+    Recursively find all paths in the JSON structure that lead to the target\
+        city.
+    Args:
+        data (dict): The JSON data structure.
+        target_city (str): The city to find paths to.
+        current_path (list): The current path being traversed (used for\
+            recursion).
+    Returns:
+        list: A list of paths (as lists of city names) that lead to the\
+            target city.
+    """
     found_paths = []
     if current_path is None:
         current_path = []
@@ -20,6 +32,19 @@ def find_paths(data, target_city, current_path=None):
 
 def compare_city_paths(target_state1, target_state2, all_city_paths1,
                        all_city_paths2):
+    """
+    Compare paths of two cities to determine the common path to their\
+        respective states.
+    Args:
+        target_state1 (str): The target state for the first city.
+        target_state2 (str): The target state for the second city.
+        all_city_paths1 (list): All paths for the first city.
+        all_city_paths2 (list): All paths for the second city.
+    Returns:
+        - equal_index (list): Indices where the paths are equal.
+        - is_ambiguous (bool): Whether the paths are ambiguous.
+        - city_state_target_min (list): The minimum path to the target state.
+    """
     equal_index = []
     is_ambiguous = False
     city_state_target_min = []
@@ -112,7 +137,17 @@ def compare_city_paths(target_state1, target_state2, all_city_paths1,
 
 
 def city2target_paths(df, data):
-
+    """
+    For each row in the DataFrame, find the paths from city_1 and city_2\
+        to their respective target states (state_1 and state_2).
+    Args:
+        df (pd.DataFrame): DataFrame containing city and state information.
+        data (dict): JSON data structure containing the hierarchy of cities\
+            and states.
+    Returns:
+        pd.DataFrame: Updated DataFrame with expected levels and ambiguity\
+            information.
+    """
     is_ambiguous = False
 
     expected_levels = []
@@ -164,8 +199,13 @@ def city2target_paths(df, data):
 
 def get_admin_level(data, path):
     """
-    Traverse the JSON tree following the path, return 'admin_level'\
-        at the end of the path.
+    Get the administrative level of the last element in the path.
+    Args:
+        data (dict): JSON data structure containing the hierarchy of cities\
+            and states.
+        path (list): List of city names representing the path.
+    Returns:
+        int: The administrative level of the last element in the path.
     """
     node = data
     if len(path) > 0:
@@ -180,6 +220,16 @@ def get_admin_level(data, path):
 
 def validate_dataframe(df_path=None, from_text=None):
     """
+    Validate and load a DataFrame from a CSV or Excel file, or from a text\
+        string.
+    Args:
+        df_path (str): Path to the CSV or Excel file.
+        from_text (str): Text string containing CSV data.
+    Returns:
+        pd.DataFrame: Loaded DataFrame.
+    Raises:
+        ValueError: If neither df_path nor from_text is provided, or if the\
+            file format is unsupported.
     """
     if df_path:
         if df_path.endswith('.csv'):
