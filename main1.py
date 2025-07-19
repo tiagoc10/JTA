@@ -60,6 +60,12 @@ def compare_city_paths(target_state1, target_state2, all_city_paths1,
         # Todos os caminhos com o target_state2
         paths2 = [path for path in all_city_paths2 if target_state2 in path]
 
+        if paths1 == paths2 and len(paths1) == 1 and len(paths2) == 1:
+            # Se os caminhos são iguais e só existe um caminho.
+            # Por ex: "aveleda-aveleda-lousada-lousada"
+            equal_index.append(len(paths1[0])-1)
+            return equal_index, False, paths1[0]  # Return the single path if they are the same
+
         if len(paths1) > 1:  # Exemplo do ponta do sol-madeira entende-se
             paths1 = [max(paths1, key=len)]  # Get the longest path
             is_ambiguous = True
@@ -67,8 +73,11 @@ def compare_city_paths(target_state1, target_state2, all_city_paths1,
             paths2 = [max(paths2, key=len)]  # Get the longest path
             is_ambiguous = True
 
-        path1 = next((path for path in paths1 if target_state1 in path), None)
-        path2 = next((path for path in paths2 if target_state2 in path), None)
+        # path1 = next((path for path in paths1 if target_state1 in path), None)
+        # path2 = next((path for path in paths2 if target_state2 in path), None)
+
+        path1 = paths1[0] if paths1 else None
+        path2 = paths2[0] if paths2 else None
 
         if path1 is None and path2:
             return [], True, 'path1 not found'
@@ -267,11 +276,12 @@ if __name__ == "__main__":
     10,9,valadares,"sao pedro do sul",,viseu
     12,13,,,Porto,Porto
     1,2,valadares,valadares,aveiro,porto
-    15,16,ponta do sol,ponta do sol,madeira,madeira
+    15,16,aveleda,aveleda,lousada,lousada
     """
-    # df = validate_dataframe(from_text=dataframe)
 
-    df = validate_dataframe(df_path="dataframe.csv")  # or ".xlsx"
+    df = validate_dataframe(from_text=dataframe)
+
+    # df = validate_dataframe(df_path="dataframe.csv")  # or ".xlsx"
 
     df = city2target_paths(df, data)
     print(df)
