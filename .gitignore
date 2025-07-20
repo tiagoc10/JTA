@@ -1,7 +1,6 @@
 venv
 *.json
 *.xlsx
-config.py
 __pycache__
 chroma_db_langchain
 see_output.py
