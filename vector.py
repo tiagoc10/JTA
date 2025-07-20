@@ -44,12 +44,12 @@ def create_llm(xlsx_file, json_file):
 
                 value = df.iloc[i, j]
                 if row_product == col_product:
-                    document_text = f"{row_product} was sold alone {value} times"
+                    document_text = f"{row_product} was sold alone {value} times"  # noqa: E501
                 else:
                     products = sorted([row_product, col_product])
-                    document_text = f"{products[0]} was sold together with {products[1]} {value} times"
+                    document_text = f"{products[0]} was sold together with {products[1]} {value} times"  # noqa: E501
 
-                doc_id = f"{sorted([row_product, col_product])[0]}__{sorted([row_product, col_product])[1]}"
+                doc_id = f"{sorted([row_product, col_product])[0]}__{sorted([row_product, col_product])[1]}"  # noqa: E501
                 document = Document(
                     page_content=document_text,
                     metadata={
@@ -75,38 +75,47 @@ def create_llm(xlsx_file, json_file):
                 description_parts = []
 
                 if category == "Console":
-                    description_parts.append(f"Console {name} was sold {times_sold} times.")
+                    description_parts.append(f"Console {name} was sold\
+                                             {times_sold} times.")
                     for store in ["Store A", "Store B", "Store C"]:
                         if store in product and product[store] is not None:
-                            description_parts.append(f"Console {name} was sold in {store} {product[store]} times.")
+                            description_parts.append(f"Console {name} was sold in {store} {product[store]} times.")  # noqa: E501
                         elif store in product and product[store] is None:
-                            description_parts.append(f"{store} did not sell {name} console.")
+                            description_parts.append(f"{store} did not sell\
+                                                     {name} console.")
 
                 elif category == "Games":
-                    description_parts.append(f"Game {name} was sold {times_sold} times.")
+                    description_parts.append(f"Game {name} was sold\
+                                             {times_sold} times.")
                     for store in ["Store A", "Store B", "Store C"]:
                         if store in product and product[store] is not None:
-                            description_parts.append(f"Game {name} was sold in {store} {product[store]} times.")
+                            description_parts.append(f"Game {name} was sold in {store} {product[store]} times.")  # noqa: E501
                         elif store in product and product[store] is None:
-                            description_parts.append(f"{store} did not sell {name} game.")
+                            description_parts.append(f"{store} did not sell\
+                                                     {name} game.")
                     if "release_date" in product:
-                        description_parts.append(f"Game {name} was released in {product['release_date']}.")
+                        description_parts.append(f"Game {name} was released in\
+                                                 {product['release_date']}.")
                     if "type" in product:
-                        description_parts.append(f"Game {name} is {product['type']} type.")
+                        description_parts.append(f"Game {name} is\
+                                                 {product['type']} type.")
                     if "franchise" in product:
-                        description_parts.append(f"{name} game belongs to franchise {product['franchise']}.")
+                        description_parts.append(f"{name} game belongs to franchise {product['franchise']}.")  # noqa: E501
                     if "min_age" in product:
-                        description_parts.append(f"The minimum age required to play {name} is {product['min_age']} years old.")
+                        description_parts.append(f"The minimum age required to play {name} is {product['min_age']} years old.")  # noqa: E501
 
                 elif category == "Accessories":
-                    description_parts.append(f"Accessory {name} was sold {times_sold} times.")
+                    description_parts.append(f"Accessory {name} was sold\
+                                             {times_sold} times.")
                     for store in ["Store A", "Store B", "Store C"]:
                         if store in product and product[store] is not None:
-                            description_parts.append(f"Accessory {name} was sold in {store} {product[store]} times.")
+                            description_parts.append(f"Accessory {name} was sold in {store} {product[store]} times.")  # noqa: E501
                         elif store in product and product[store] is None:
-                            description_parts.append(f"{store} did not sell {name} acessory.")
+                            description_parts.append(f"{store} did not sell\
+                                                     {name} acessory.")
                     if "category" in product:
-                        description_parts.append(f"Accessory {name} is a {product['category']}.")
+                        description_parts.append(f"Accessory {name} is a\
+                                                 {product['category']}.")
 
                 description = " ".join(description_parts)
 
