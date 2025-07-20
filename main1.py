@@ -319,11 +319,6 @@ if __name__ == "__main__":
         "1,8,valadares,\"sao pedro do sul\",viseu,viseu\n"
         "1,8,valadares,\"sao pedro do sul\",viseu,\n"
         "10,9,valadares,\"sao pedro do sul\",,viseu\n"
-        "12,13,,,Porto,Porto\n"
-        "1,2,valadares,valadares,aveiro,porto\n"
-        "15,16,aveleda,aveleda,lousada,porto\n"
-        "21,20,aveleda,lijo,,braga\n"
-        "21,20,aveleda,lijo,,\n"
     )
 
     df = validate_dataframe(from_text=dataframe)
