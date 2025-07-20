@@ -6,3 +6,5 @@ chroma_db_langchain
 see_output.py
 *.csv
 tests
+task2
+*.zip

@@ -30,7 +30,7 @@ def chatbot(xlsx_file, json_file):
                        temperature=0.3,
                        )  # Lower temperature value → more focused responses
 
-    template = """
+    prompt_template = """
     You are an expert on videogames, their sales history, and gaming consoles.
     You will be provided with a list of videogames along with their sales\
         history and reviews.
@@ -53,15 +53,19 @@ def chatbot(xlsx_file, json_file):
     - For questions outside your expertise, respond politely that you dont\
         have the related information.
 
+    Conversation so far:
+    {history}
+
     Here are some relevant reviews: {reviews}
 
     Here is the question to answer: {question}
     """
 
-    prompt = ChatPromptTemplate.from_template(template)
+    prompt = ChatPromptTemplate.from_template(prompt_template)
     chain = prompt | model
 
     print("Chatbot online! Press 'q' or 'quit' or 'exit' to exit")
+    history = []  # Store conversation history as a list of dicts
     while True:
         print("\n---------------------------\n")
         question = input("User: ")
@@ -69,10 +73,24 @@ def chatbot(xlsx_file, json_file):
         if question.lower() in ["q", "quit", "exit"]:
             print("Exiting the chatbot. Goodbye!")
             break
+        # Add user message to history
+        history.append({"role": "user", "content": question})
         # Retrieve relevant documents based on the question
         reviews = retriever.invoke(question)
-        result = chain.invoke({"reviews": reviews, "question": question})
+        # Format history as a string for the prompt
+        formatted_history = "\n".join([
+            f"User: {msg['content']}" if msg['role'] == 'user' else \
+            f"Bot: {msg['content']}"
+            for msg in history
+        ])
+        result = chain.invoke({
+            "reviews": reviews,
+            "question": question,
+            "history": formatted_history
+        })
         print(f"Bot: {result.content}")  # Print the answer from the model
+        # Add bot response to history
+        history.append({"role": "assistant", "content": result.content})
 
 
 if __name__ == "__main__":
