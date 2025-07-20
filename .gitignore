@@ -8,3 +8,8 @@ chroma_db_langchain
 __pycache__
 *.xlsx
 tests
+task2.zip
+task2/main2.py
+task2/README.md
+task2/requirements.txt
+task2/vector.py

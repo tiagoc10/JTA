@@ -89,8 +89,6 @@ class CityPathAnalyzer:
             # All paths with the target_state2
             paths2 = [path for path in all_city_paths2 if target_state2 in path]  # noqa: E501
 
-            print(f"Paths1: {paths1}")
-            print(f"Paths2: {paths2}")
             if paths1 == paths2 and len(paths1) == 1 and len(paths2) == 1:
                 # If the paths are equal and only one path exists.
                 # For example: "aveleda-aveleda-lousada-lousada"
@@ -157,6 +155,8 @@ class CityPathAnalyzer:
                 known_paths = all_city_paths1
                 unknown_paths = all_city_paths2
 
+            print(f"known_paths: {known_paths}")
+            print(f"unknown_paths: {unknown_paths}")
             known_path = next((path for path in known_paths
                                if known_target in path), None)
             if known_path is not None:
@@ -176,6 +176,14 @@ class CityPathAnalyzer:
                     if city_state_target_min[i] == path_max[i]:
                         equal_index.append(i)
 
+            # If all values on equal_index are 0 (country index)
+            if all(idx == 0 for idx in equal_index):
+                # If the only common element is 'Country', then it is not
+                # ambiguous. For example: "aveleda-lijo-None-braga",
+                # Aveleda presents more than one path, but if the highets level
+                # is always the country, then it is not ambiguous.
+                is_ambiguous = False
+
         elif target_state1_nan and target_state2_nan:
             all_city_paths1 = [['Country'] + path for path in all_city_paths1]
             all_city_paths2 = [['Country'] + path for path in all_city_paths2]
@@ -191,6 +199,14 @@ class CityPathAnalyzer:
                     for i in range(min_len):
                         if city_state_target_min[i] == city_state_target_max[i]:  # noqa: E501
                             equal_index.append(i)
+
+            # If all values on equal_index are 0 (country index)
+            if all(idx == 0 for idx in equal_index):
+                # If the only common element is 'Country', then it is not
+                # ambiguous. For example: "aveleda-lijo-None-braga",
+                # Aveleda presents more than one path, but if the highets level
+                # is always the country, then it is not ambiguous.
+                is_ambiguous = False
 
         return equal_index, is_ambiguous, city_state_target_min
 
@@ -306,11 +322,13 @@ if __name__ == "__main__":
         "12,13,,,Porto,Porto\n"
         "1,2,valadares,valadares,aveiro,porto\n"
         "15,16,aveleda,aveleda,lousada,porto\n"
+        "21,20,aveleda,lijo,,braga\n"
+        "21,20,aveleda,lijo,,\n"
     )
 
-    # df = validate_dataframe(from_text=dataframe)
+    df = validate_dataframe(from_text=dataframe)
 
-    df = validate_dataframe(df_path="dataframe.csv")  # or ".xlsx"
+    # df = validate_dataframe(df_path="dataframe.csv")  # or ".xlsx"
 
     city_hierarchy = CityHierarchy(data)
     analyzer = CityPathAnalyzer(city_hierarchy)
