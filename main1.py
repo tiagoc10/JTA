@@ -134,6 +134,9 @@ class CityPathAnalyzer:
             elif city_state_target1 != city_state_target2\
                     and city_state_target1[0] == city_state_target2[0]\
                     and city_state_target1[-1] == city_state_target2[-1]:
+                # If both paths start and end with the same elements, but are
+                # different in the middle.
+                # For example: "valadares-sao pedro do sul-viseu-viseu"\
                 min_len -= 1  # Exclude the last element, which is the city
 
             city_state_target_min = min(city_state_target1, city_state_target2)
