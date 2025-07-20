@@ -89,6 +89,8 @@ class CityPathAnalyzer:
             # All paths with the target_state2
             paths2 = [path for path in all_city_paths2 if target_state2 in path]  # noqa: E501
 
+            print(f"Paths1: {paths1}")
+            print(f"Paths2: {paths2}")
             if paths1 == paths2 and len(paths1) == 1 and len(paths2) == 1:
                 # If the paths are equal and only one path exists.
                 # For example: "aveleda-aveleda-lousada-lousada"
@@ -122,8 +124,17 @@ class CityPathAnalyzer:
                 city_state_target2 = []
 
             min_len = min(len(city_state_target1), len(city_state_target2))
-            if len(city_state_target1) == len(city_state_target2):
-                min_len -= 1
+
+            if city_state_target1 == city_state_target2:
+                # If both paths are equal, return the path.
+                # Presents more than one path, but they one of them is equal
+                #   to the other.
+                equal_index.append(len(city_state_target1)-1)
+                return equal_index, True, city_state_target1
+            elif city_state_target1 != city_state_target2\
+                    and city_state_target1[0] == city_state_target2[0]\
+                    and city_state_target1[-1] == city_state_target2[-1]:
+                min_len -= 1  # Exclude the last element, which is the city
 
             city_state_target_min = min(city_state_target1, city_state_target2)
             city_state_target_max = max(city_state_target1, city_state_target2)
@@ -291,7 +302,7 @@ if __name__ == "__main__":
         "10,9,valadares,\"sao pedro do sul\",,viseu\n"
         "12,13,,,Porto,Porto\n"
         "1,2,valadares,valadares,aveiro,porto\n"
-        "15,16,aveleda,aveleda,lousada,lousada\n"
+        "15,16,aveleda,aveleda,lousada,porto\n"
     )
 
     # df = validate_dataframe(from_text=dataframe)
