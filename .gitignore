@@ -9,10 +9,5 @@ __pycache__
 *.xlsx
 tests
 *.zip
-task2/main2.py
-task2/README.md
-task2/requirements.txt
-task2/vector.py
-task2/.gitignore
-task2/main1.py
+task2
 task1
