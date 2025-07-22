@@ -28,7 +28,7 @@ def create_llm(xlsx_file, json_file):
     db_location = "./chroma_db_langchain"
     add_documents = not os.path.exists(db_location)
 
-    df = pd.read_excel("Nintendo_Cooccurrence_Matrix.xlsx", index_col=0)
+    df = pd.read_excel(xlsx_file, index_col=0)
 
     embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
 
@@ -64,7 +64,7 @@ def create_llm(xlsx_file, json_file):
 
     # JSON data processing
     if add_documents:
-        with open("dataset.json", "r", encoding="utf-8") as f:
+        with open(json_file, "r", encoding="utf-8") as f:
             product_data = json.load(f)
 
         for category, products in product_data.items():
@@ -79,6 +79,7 @@ def create_llm(xlsx_file, json_file):
                                              {times_sold} times.")
                     for store in ["Store A", "Store B", "Store C"]:
                         if store in product and product[store] is not None:
+                            description_parts.append(f"{store} sell {name} console")  # noqa: E501
                             description_parts.append(f"Console {name} was sold in {store} {product[store]} times.")  # noqa: E501
                         elif store in product and product[store] is None:
                             description_parts.append(f"{store} did not sell\
@@ -89,6 +90,7 @@ def create_llm(xlsx_file, json_file):
                                              {times_sold} times.")
                     for store in ["Store A", "Store B", "Store C"]:
                         if store in product and product[store] is not None:
+                            description_parts.append(f"{store} sell {name} game.")  # noqa: E501
                             description_parts.append(f"Game {name} was sold in {store} {product[store]} times.")  # noqa: E501
                         elif store in product and product[store] is None:
                             description_parts.append(f"{store} did not sell\
@@ -109,6 +111,7 @@ def create_llm(xlsx_file, json_file):
                                              {times_sold} times.")
                     for store in ["Store A", "Store B", "Store C"]:
                         if store in product and product[store] is not None:
+                            description_parts.append(f"{store} sell {name} acessory.")  # noqa: E501
                             description_parts.append(f"Accessory {name} was sold in {store} {product[store]} times.")  # noqa: E501
                         elif store in product and product[store] is None:
                             description_parts.append(f"{store} did not sell\
