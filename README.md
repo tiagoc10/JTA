@@ -7,3 +7,6 @@ Improvements:
 Limitations:
 - No chat memory available.
 - Evaluate different approaches to building the chatbot.
+
+Note:
+The OpenAI key is still present in this repository. If you prefer to have it removed, please let me know.
