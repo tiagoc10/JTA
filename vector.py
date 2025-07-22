@@ -30,7 +30,11 @@ def create_llm(xlsx_file, json_file):
 
     df = pd.read_excel(xlsx_file, index_col=0)
 
-    embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
+    # Embeddings are used to convert text into numerical vectors that capture
+    # the semantic meaning of the text.
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-large")  # There is
+    # also the "text-embedding-3-small" model, which is faster but less
+    # accurate.
 
     documents = []
     ids = []
@@ -39,7 +43,8 @@ def create_llm(xlsx_file, json_file):
     if add_documents:
         for i, row_product in enumerate(df.index):
             for j, col_product in enumerate(df.columns):
-                if j < i:
+                if j < i:  # Avoid duplicate pairs, redundant checks.
+                    # For example (A-B) and (B-A))
                     continue
 
                 value = df.iloc[i, j]
